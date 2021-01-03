@@ -1,5 +1,4 @@
 import React from 'react';
-import { Popover, Button, ButtonVariant } from '@patternfly/react-core';
 import {
   global_danger_color_100 as dangerColor,
   global_success_color_100 as okColor,
@@ -14,21 +13,22 @@ import {
   BanIcon,
   IconSize,
 } from '@patternfly/react-icons';
-import { Cluster, ClusterStatusEnum } from '../../api/types';
+import { ClusterStatusEnum } from '../../api/types';
 import { CLUSTER_STATUS_LABELS } from '../../config/constants';
 
-import './ClusterStatus.css';
-
 type ClusterStatusProps = {
-  cluster: Cluster;
+  status: ClusterStatusEnum;
 };
 
 const iconProps = {
-  className: 'clusterStatus',
   size: IconSize.sm,
 };
 
-const getStatusIcon = (status: ClusterStatusEnum): React.ReactElement => {
+type ClusterStatusIconProps = {
+  status: ClusterStatusEnum;
+};
+
+export const ClusterStatusIcon: React.FC<ClusterStatusIconProps> = ({ status }) => {
   switch (status) {
     case ClusterStatusEnum.CANCELLED:
       return <BanIcon {...iconProps} />;
@@ -47,20 +47,20 @@ const getStatusIcon = (status: ClusterStatusEnum): React.ReactElement => {
     case ClusterStatusEnum.FINALIZING:
     case ClusterStatusEnum.ADDING_HOSTS:
       return <InProgressIcon {...iconProps} />;
+    default:
+      return <></>;
   }
 };
 
-export const getClusterStatusText = (cluster: Cluster) =>
-  CLUSTER_STATUS_LABELS[cluster.status] || cluster.status;
+export const getClusterStatusText = (status: ClusterStatusEnum) =>
+  CLUSTER_STATUS_LABELS[status] || status;
 
-const ClusterStatus: React.FC<ClusterStatusProps> = ({ cluster }) => {
-  const { status } = cluster;
-  const title = getClusterStatusText(cluster);
-  const icon = getStatusIcon(status) || null;
+const ClusterStatus: React.FC<ClusterStatusProps> = ({ status }) => {
+  const title = getClusterStatusText(status);
 
   return (
-    <div className="cluster-status-string">
-      {icon} {title}
+    <div>
+      <ClusterStatusIcon status={status} /> {title}
     </div>
   );
 };

@@ -29,7 +29,7 @@ import { AlertsContext } from '../AlertsContextProvider';
 import { canDownloadClusterLogs } from '../hosts/utils';
 
 const canAbortInstallation = (cluster: Cluster) => {
-  const allowedClusterStates: Cluster['status'][] = [
+  const allowedClusterStates: ClusterStatusEnum[] = [
     ClusterStatusEnum.PREPARING_FOR_INSTALLATION,
     ClusterStatusEnum.INSTALLING,
     ClusterStatusEnum.INSTALLING_PENDING_USER_INPUT,
@@ -69,7 +69,7 @@ const ClusterDetail: React.FC<ClusterDetailProps> = ({
   }, [cluster.id]);
 
   React.useEffect(() => {
-    if (['finalizing', 'installed'].includes(cluster.status)) {
+    if ([ClusterStatusEnum.FINALIZING, ClusterStatusEnum.INSTALLED].includes(cluster.status)) {
       fetchCredentials();
     }
   }, [cluster.status, fetchCredentials]);
@@ -86,23 +86,25 @@ const ClusterDetail: React.FC<ClusterDetailProps> = ({
           <GridItem>
             <ClusterProgress cluster={cluster} />
           </GridItem>
-          {['installed', 'installing', 'finalizing'].includes(cluster.status) && (
-            <FailedHostsWarning cluster={cluster} />
-          )}
-          {cluster.status === 'error' && (
+          {[
+            ClusterStatusEnum.INSTALLED,
+            ClusterStatusEnum.INSTALLING,
+            ClusterStatusEnum.FINALIZING,
+          ].includes(cluster.status) && <FailedHostsWarning cluster={cluster} />}
+          {cluster.status === ClusterStatusEnum.ERROR && (
             <ClusterInstallationError
               cluster={cluster}
               setResetClusterModalOpen={setResetClusterModalOpen}
             />
           )}
-          {cluster.status === 'cancelled' && (
+          {cluster.status === ClusterStatusEnum.CANCELLED && (
             <ClusterInstallationError
               title="Cluster installation was cancelled"
               cluster={cluster}
               setResetClusterModalOpen={setResetClusterModalOpen}
             />
           )}
-          {['finalizing', 'installed'].includes(cluster.status) && (
+          {[ClusterStatusEnum.FINALIZING, ClusterStatusEnum.INSTALLED].includes(cluster.status) && (
             <ClusterCredentials
               cluster={cluster}
               credentials={credentials}
@@ -154,6 +156,37 @@ const ClusterDetail: React.FC<ClusterDetailProps> = ({
               id={getID('button-launch-console')}
             />
           )}
+        </ClusterToolbar>
+      </StackItem>
+      <StackItem>
+        <ClusterToolbar>
+          {canAbortInstallation(cluster) && (
+            <ToolbarButton
+              variant={ButtonVariant.danger}
+              onClick={() => setCancelInstallationModalOpen(true)}
+            >
+              Abort Installation
+            </ToolbarButton>
+          )}
+          {cluster.status === ClusterStatusEnum.ERROR && (
+            <ToolbarButton
+              id={getID('button-reset-cluster')}
+              onClick={() => setResetClusterModalOpen(true)}
+            >
+              Reset Cluster
+            </ToolbarButton>
+          )}
+          {[ClusterStatusEnum.FINALIZING, ClusterStatusEnum.INSTALLING].includes(
+            cluster.status,
+          ) && (
+            <LaunchOpenshiftConsoleButton
+              isDisabled={!credentials || !!credentialsError}
+              cluster={cluster}
+              consoleUrl={credentials?.consoleUrl}
+              id={getID('button-launch-console')}
+            />
+          )}
+
           <ToolbarButton
             variant={ButtonVariant.link}
             component={(props) => <Link to={`${routeBasePath}/clusters`} {...props} />}
@@ -162,24 +195,35 @@ const ClusterDetail: React.FC<ClusterDetailProps> = ({
           >
             Back to all clusters
           </ToolbarButton>
+
           <ToolbarSecondaryGroup>
             <ToolbarButton
-              id="cluster-installation-logs-button"
               variant={ButtonVariant.link}
-              onClick={() => downloadClusterInstallationLogs(addAlert, cluster.id)}
-              isDisabled={!canDownloadClusterLogs(cluster)}
+              component={(props) => <Link to={`${routeBasePath}/clusters`} {...props} />}
+              isHidden={isSingleClusterMode()}
+              id={getID('button-back-to-all-clusters')}
             >
-              Download Installation Logs
+              Back to all clusters
             </ToolbarButton>
-            <EventsModalButton
-              id="cluster-events-button"
-              entityKind="cluster"
-              cluster={cluster}
-              title="Cluster Events"
-              variant={ButtonVariant.link}
-            >
-              View Cluster Events
-            </EventsModalButton>
+            <ToolbarSecondaryGroup>
+              <ToolbarButton
+                id="cluster-installation-logs-button"
+                variant={ButtonVariant.link}
+                onClick={() => downloadClusterInstallationLogs(addAlert, cluster.id)}
+                isDisabled={!canDownloadClusterLogs(cluster)}
+              >
+                Download Installation Logs
+              </ToolbarButton>
+              <EventsModalButton
+                id="cluster-events-button"
+                entityKind="cluster"
+                cluster={cluster}
+                title="Cluster Events"
+                variant={ButtonVariant.link}
+              >
+                View Cluster Events
+              </EventsModalButton>
+            </ToolbarSecondaryGroup>
           </ToolbarSecondaryGroup>
         </ClusterToolbar>
       </StackItem>

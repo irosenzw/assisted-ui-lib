@@ -20,7 +20,7 @@ import {
   forceReload,
   cancelForceReload,
 } from '../../features/clusters/currentClusterSlice';
-import { Cluster } from '../../api/types';
+import { Cluster, ClusterStatusEnum } from '../../api/types';
 import { isSingleClusterMode, POLLING_INTERVAL, routeBasePath } from '../../config/constants';
 import ClusterDetail from '../clusterDetail/ClusterDetail';
 import CancelInstallationModal from '../clusterDetail/CancelInstallationModal';
@@ -88,7 +88,7 @@ const ClusterPage: React.FC<RouteComponentProps<MatchParams>> = ({ match }) => {
   }
 
   const getContent = (cluster: Cluster) => {
-    if (cluster.status === 'adding-hosts') {
+    if (cluster.status === ClusterStatusEnum.ADDING_HOSTS) {
       return (
         <AddBareMetalHostsContextProvider cluster={cluster}>
           <AddBareMetalHosts />
@@ -96,13 +96,13 @@ const ClusterPage: React.FC<RouteComponentProps<MatchParams>> = ({ match }) => {
       );
     } else if (
       [
-        'preparing-for-installation',
-        'installing',
-        'installing-pending-user-action',
-        'finalizing',
-        'installed',
-        'error',
-        'cancelled',
+        ClusterStatusEnum.PREPARING_FOR_INSTALLATION,
+        ClusterStatusEnum.INSTALLING,
+        ClusterStatusEnum.INSTALLING_PENDING_USER_INPUT,
+        ClusterStatusEnum.FINALIZING,
+        ClusterStatusEnum.INSTALLED,
+        ClusterStatusEnum.ERROR,
+        ClusterStatusEnum.CANCELLED,
       ].includes(cluster.status)
     ) {
       return (
